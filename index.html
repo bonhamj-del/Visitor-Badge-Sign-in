@@ -26,9 +26,7 @@
       --shadow: 0 12px 35px rgba(0,0,0,.08);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html, body {
       height: 100%;
@@ -98,13 +96,8 @@
       padding-right: 4px;
     }
 
-    .step {
-      display: none;
-    }
-
-    .step.active {
-      display: block;
-    }
+    .step { display: none; }
+    .step.active { display: block; }
 
     .row {
       display: grid;
@@ -230,38 +223,14 @@
     }
 
     @media (max-width: 750px) {
-      .wrap {
-        padding: 12px;
-      }
-
-      .card {
-        min-height: auto;
-        padding: 20px;
-      }
-
-      .row {
-        grid-template-columns: 1fr;
-      }
-
-      .logo {
-        height: 70px;
-      }
-
-      .welcome {
-        font-size: 22px;
-      }
-
-      .subtext {
-        font-size: 15px;
-      }
-
-      button {
-        width: 100%;
-      }
-
-      .btns {
-        gap: 12px;
-      }
+      .wrap { padding: 12px; }
+      .card { min-height: auto; padding: 20px; }
+      .row { grid-template-columns: 1fr; }
+      .logo { height: 70px; }
+      .welcome { font-size: 22px; }
+      .subtext { font-size: 15px; }
+      button { width: 100%; }
+      .btns { gap: 12px; }
     }
   </style>
 </head>
@@ -381,11 +350,15 @@
     const retakeBtn = document.getElementById("retakeBtn");
     const signInBtn = document.getElementById("signInBtn");
     const resetBtn = document.getElementById("resetBtn");
+    const submitFrame = document.getElementById("submitFrame");
 
     let stream = null;
     let photoDataUrl = null;
     let isSubmitting = false;
     let inactivityTimer = null;
+    let submitStartedAt = 0;
+    let submitTimeout = null;
+    let gotServerResponse = false;
 
     function setStatus(message) {
       const msg = message || "";
@@ -486,7 +459,7 @@
       }
     }
 
-    function captureAndResizeDataUrl(quality = 0.82, maxWidth = 900) {
+    function captureAndResizeDataUrl(quality = 0.72, maxWidth = 700) {
       const sourceWidth = video.videoWidth;
       const sourceHeight = video.videoHeight;
 
@@ -508,6 +481,24 @@
       return canvas.toDataURL("image/jpeg", quality);
     }
 
+    function finishSuccess() {
+      clearTimeout(submitTimeout);
+      gotServerResponse = true;
+      setStatus("Done. Please check in with the secretary.");
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    }
+
+    function finishError(message) {
+      clearTimeout(submitTimeout);
+      gotServerResponse = true;
+      setStatus("Error: " + (message || "Unknown error"));
+      isSubmitting = false;
+      signInBtn.disabled = false;
+      retakeBtn.disabled = false;
+    }
+
     function submitVisit() {
       const names = validateNames();
       if (!names) return;
@@ -520,6 +511,9 @@
       if (isSubmitting) return;
 
       isSubmitting = true;
+      gotServerResponse = false;
+      submitStartedAt = Date.now();
+
       signInBtn.disabled = true;
       retakeBtn.disabled = true;
 
@@ -530,20 +524,21 @@
       document.getElementById("formPhotoDataUrl").value = photoDataUrl;
       document.getElementById("formDevice").value = navigator.userAgent;
 
+      clearTimeout(submitTimeout);
+      submitTimeout = setTimeout(() => {
+        if (!gotServerResponse) {
+          setStatus("Still working... badge creation can take a little longer.");
+        }
+      }, 8000);
+
       document.getElementById("submitForm").submit();
     }
 
     function handleServerResponse(data) {
       if (data.ok) {
-        setStatus("Done. Please check in with the secretary.");
-        setTimeout(() => {
-          location.reload();
-        }, 1500);
+        finishSuccess();
       } else {
-        setStatus("Error: " + (data.error || "Unknown error"));
-        isSubmitting = false;
-        signInBtn.disabled = false;
-        retakeBtn.disabled = false;
+        finishError(data.error);
       }
     }
 
@@ -553,11 +548,18 @@
         if (!data || typeof data.ok === "undefined") return;
         handleServerResponse(data);
       } catch (err) {
-        setStatus("Error reading server response.");
-        isSubmitting = false;
-        signInBtn.disabled = false;
-        retakeBtn.disabled = false;
+        finishError("Error reading server response.");
       }
+    });
+
+    submitFrame.addEventListener("load", () => {
+      if (!isSubmitting || gotServerResponse) return;
+
+      // Ignore the initial empty iframe load and extremely quick loads.
+      if (Date.now() - submitStartedAt < 1200) return;
+
+      // Fallback: backend likely finished, but message did not reach parent.
+      finishSuccess();
     });
 
     async function handleStartCamera() {
@@ -570,7 +572,6 @@
         await startCamera();
         showStep(2);
       } catch (e) {
-        // message already shown
       } finally {
         startCameraBtn.disabled = false;
       }
@@ -596,7 +597,6 @@
         await startCamera();
         showStep(2);
       } catch (e) {
-        // message already shown
       } finally {
         retakeBtn.disabled = false;
         signInBtn.disabled = false;
