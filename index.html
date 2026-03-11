@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>NWASCO Visitor Sign-In</title>
+
   <style>
     :root {
       --bg: #f3f4f6;
@@ -16,10 +17,18 @@
       --notice-bg: #fff7ed;
       --notice-border: #fed7aa;
       --notice-text: #7c2d12;
+      --hint-bg: #eff6ff;
+      --hint-border: #bfdbfe;
+      --hint-text: #1e3a8a;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #991b1b;
       --shadow: 0 12px 35px rgba(0,0,0,.08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html, body {
       height: 100%;
@@ -55,6 +64,8 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 16px;
+      text-align: left;
+      flex-shrink: 0;
     }
 
     .logo {
@@ -65,6 +76,7 @@
       padding: 6px;
       border-radius: 10px;
       border: 1px solid #eef0f3;
+      flex-shrink: 0;
     }
 
     .welcome {
@@ -83,10 +95,16 @@
     .content {
       flex: 1;
       overflow: auto;
+      padding-right: 4px;
     }
 
-    .step { display: none; }
-    .step.active { display: block; }
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
 
     .row {
       display: grid;
@@ -109,6 +127,12 @@
       border-radius: 14px;
       border: 1px solid var(--border);
       outline: none;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0,56,101,.12);
     }
 
     .cameraFrame {
@@ -121,7 +145,7 @@
       margin-top: 10px;
     }
 
-    video, img {
+    video, #preview {
       display: block;
       width: 100%;
       height: 100%;
@@ -129,7 +153,9 @@
       background: #000;
     }
 
-    .hint, .notice {
+    .hintBox,
+    .notice,
+    .errorBox {
       margin-top: 16px;
       padding: 14px 16px;
       border-radius: 14px;
@@ -138,16 +164,29 @@
       font-weight: 650;
     }
 
-    .hint {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1e3a8a;
+    .hintBox {
+      background: var(--hint-bg);
+      border: 1px solid var(--hint-border);
+      color: var(--hint-text);
     }
 
     .notice {
       background: var(--notice-bg);
       border: 1px solid var(--notice-border);
       color: var(--notice-text);
+    }
+
+    .errorBox {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+      display: none;
+    }
+
+    .small {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.35;
     }
 
     .btns {
@@ -165,6 +204,7 @@
       font-size: 20px;
       cursor: pointer;
       min-width: 180px;
+      user-select: none;
     }
 
     button:disabled {
@@ -172,8 +212,15 @@
       cursor: not-allowed;
     }
 
-    .primary { background: var(--primary); color: #fff; }
-    .secondary { background: var(--secondary); color: #111827; }
+    .primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .secondary {
+      background: var(--secondary);
+      color: #111827;
+    }
 
     .status {
       min-height: 28px;
@@ -183,10 +230,38 @@
     }
 
     @media (max-width: 750px) {
-      .row { grid-template-columns: 1fr; }
-      button { width: 100%; }
-      .logo { height: 70px; }
-      .welcome { font-size: 22px; }
+      .wrap {
+        padding: 12px;
+      }
+
+      .card {
+        min-height: auto;
+        padding: 20px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .logo {
+        height: 70px;
+      }
+
+      .welcome {
+        font-size: 22px;
+      }
+
+      .subtext {
+        font-size: 15px;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .btns {
+        gap: 12px;
+      }
     }
   </style>
 </head>
@@ -194,7 +269,11 @@
   <div class="wrap">
     <div class="card">
       <div class="header">
-        <img class="logo" src="https://www.nwasco.k12.or.us/pics/school_logo.png" alt="NWASCO logo">
+        <img
+          class="logo"
+          src="https://www.nwasco.k12.or.us/pics/school_logo.png"
+          alt="North Wasco County School District logo"
+        >
         <div>
           <h1 class="welcome">Welcome to North Wasco County School District</h1>
           <div class="subtext">Please sign in before checking in with the front office.</div>
@@ -208,13 +287,16 @@
               <label for="firstName">First Name</label>
               <input id="firstName" autocomplete="given-name">
             </div>
+
             <div>
               <label for="lastName">Last Name</label>
               <input id="lastName" autocomplete="family-name">
             </div>
           </div>
 
-          <div class="hint">When Chrome asks for camera access, tap <strong>Allow</strong>.</div>
+          <div class="hintBox small">
+            When prompted, tap <strong>Allow</strong> to let this page use the camera.
+          </div>
 
           <div class="btns">
             <button class="primary" id="startCameraBtn" type="button">Next: Take Photo</button>
@@ -225,11 +307,15 @@
         </div>
 
         <div id="step2" class="step">
-          <div class="hint">Center your face in the frame, then tap <strong>Capture Photo</strong>.</div>
+          <div class="hintBox">
+            Center your face in the frame, then tap <strong>Capture Photo</strong>.
+          </div>
 
           <div class="cameraFrame">
             <video id="video" autoplay playsinline muted></video>
           </div>
+
+          <div id="cameraErrorBox" class="errorBox small"></div>
 
           <div class="btns">
             <button class="primary" id="captureBtn" type="button">Capture Photo</button>
@@ -241,10 +327,12 @@
 
         <div id="step3" class="step">
           <div class="cameraFrame">
-            <img id="preview" alt="Preview">
+            <img id="preview" alt="Visitor photo preview">
           </div>
 
-          <div class="notice">Please check in with the secretary for your ID badge.</div>
+          <div class="notice">
+            Please check in with the secretary for your ID badge.
+          </div>
 
           <div class="btns">
             <button class="secondary" id="retakeBtn" type="button">Retake</button>
@@ -257,9 +345,22 @@
     </div>
   </div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwK8NN2n4WPj4yQrfqugJR9YYzv49TiCYqloDUgMppZ2PUduB0Se85ZI_U5FKeO5Pal/exec";
+  <form
+    id="submitForm"
+    action="https://script.google.com/macros/s/AKfycbwK8NN2n4WPj4yQrfqugJR9YYzv49TiCYqloDUgMppZ2PUduB0Se85ZI_U5FKeO5Pal/exec"
+    method="POST"
+    target="submitFrame"
+    style="display:none;"
+  >
+    <input type="hidden" name="firstName" id="formFirstName">
+    <input type="hidden" name="lastName" id="formLastName">
+    <input type="hidden" name="photoDataUrl" id="formPhotoDataUrl">
+    <input type="hidden" name="device" id="formDevice">
+  </form>
 
+  <iframe name="submitFrame" id="submitFrame" style="display:none;"></iframe>
+
+  <script>
     const step1 = document.getElementById("step1");
     const step2 = document.getElementById("step2");
     const step3 = document.getElementById("step3");
@@ -269,29 +370,64 @@
     const video = document.getElementById("video");
     const preview = document.getElementById("preview");
 
+    const statusEl = document.getElementById("status");
+    const statusCamEl = document.getElementById("statusCam");
+    const status2El = document.getElementById("status2");
+    const cameraErrorBox = document.getElementById("cameraErrorBox");
+
+    const startCameraBtn = document.getElementById("startCameraBtn");
+    const captureBtn = document.getElementById("captureBtn");
+    const backBtn = document.getElementById("backBtn");
+    const retakeBtn = document.getElementById("retakeBtn");
+    const signInBtn = document.getElementById("signInBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
     let stream = null;
     let photoDataUrl = null;
     let isSubmitting = false;
     let inactivityTimer = null;
 
-    function setStatus(msg) {
-      document.getElementById("status").textContent = msg || "";
-      document.getElementById("statusCam").textContent = msg || "";
-      document.getElementById("status2").textContent = msg || "";
+    function setStatus(message) {
+      const msg = message || "";
+      statusEl.textContent = msg;
+      statusCamEl.textContent = msg;
+      status2El.textContent = msg;
     }
 
-    function showStep(n) {
-      step1.classList.toggle("active", n === 1);
-      step2.classList.toggle("active", n === 2);
-      step3.classList.toggle("active", n === 3);
+    function clearCameraError() {
+      cameraErrorBox.style.display = "none";
+      cameraErrorBox.textContent = "";
+    }
+
+    function showCameraError(message) {
+      cameraErrorBox.textContent = message;
+      cameraErrorBox.style.display = "block";
+    }
+
+    function showStep(stepNumber) {
+      step1.classList.toggle("active", stepNumber === 1);
+      step2.classList.toggle("active", stepNumber === 2);
+      step3.classList.toggle("active", stepNumber === 3);
+
+      if (stepNumber === 1) {
+        clearCameraError();
+        firstNameEl.focus();
+      }
     }
 
     function stopCamera() {
       if (stream) {
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(track => track.stop());
         stream = null;
       }
       video.srcObject = null;
+    }
+
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        location.reload();
+      }, 120000);
     }
 
     function validateNames() {
@@ -308,7 +444,15 @@
 
     async function startCamera() {
       setStatus("Starting camera...");
+      clearCameraError();
       stopCamera();
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const msg = "This device or browser does not support camera access.";
+        setStatus(msg);
+        showCameraError(msg);
+        throw new Error(msg);
+      }
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -324,13 +468,20 @@
         await video.play();
         setStatus("");
       } catch (e) {
+        let friendly = "Camera error.";
+
         if (e.name === "NotAllowedError") {
-          setStatus("Camera blocked. Allow camera access in Chrome and reload.");
+          friendly = "Camera access was blocked. Allow camera access for this site, then reload the page.";
         } else if (e.name === "NotFoundError") {
-          setStatus("No camera was found on this device.");
-        } else {
-          setStatus(`Camera error: ${e.name || "Error"}`);
+          friendly = "No camera was found on this device.";
+        } else if (e.name === "NotReadableError") {
+          friendly = "The camera is busy or unavailable. Close any other app using the camera and try again.";
+        } else if (e.message) {
+          friendly = e.message;
         }
+
+        setStatus(friendly);
+        showCameraError(friendly);
         throw e;
       }
     }
@@ -340,7 +491,7 @@
       const sourceHeight = video.videoHeight;
 
       if (!sourceWidth || !sourceHeight) {
-        throw new Error("Camera is not ready yet.");
+        throw new Error("Camera is not ready yet. Please try again.");
       }
 
       const scale = Math.min(1, maxWidth / sourceWidth);
@@ -357,114 +508,135 @@
       return canvas.toDataURL("image/jpeg", quality);
     }
 
-    async function submitVisit() {
+    function submitVisit() {
       const names = validateNames();
       if (!names) return;
 
       if (!photoDataUrl) {
-        setStatus("Missing photo. Please retake.");
+        setStatus("Missing photo. Please retake the picture.");
         return;
       }
 
       if (isSubmitting) return;
-      isSubmitting = true;
 
-      document.getElementById("signInBtn").disabled = true;
-      document.getElementById("retakeBtn").disabled = true;
+      isSubmitting = true;
+      signInBtn.disabled = true;
+      retakeBtn.disabled = true;
 
       setStatus("Creating badge...");
 
-      try {
-        const res = await fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            firstName: names.first,
-            lastName: names.last,
-            photoDataUrl,
-            device: navigator.userAgent
-          })
-        });
+      document.getElementById("formFirstName").value = names.first;
+      document.getElementById("formLastName").value = names.last;
+      document.getElementById("formPhotoDataUrl").value = photoDataUrl;
+      document.getElementById("formDevice").value = navigator.userAgent;
 
-        const data = await res.json();
+      document.getElementById("submitForm").submit();
+    }
 
-        if (!data.ok) {
-          throw new Error(data.error || "Unknown error");
-        }
-
+    function handleServerResponse(data) {
+      if (data.ok) {
         setStatus("Done. Please check in with the secretary.");
-        setTimeout(() => location.reload(), 1500);
-
-      } catch (err) {
-        setStatus("Error: " + (err.message || err));
+        setTimeout(() => {
+          location.reload();
+        }, 1500);
+      } else {
+        setStatus("Error: " + (data.error || "Unknown error"));
         isSubmitting = false;
-        document.getElementById("signInBtn").disabled = false;
-        document.getElementById("retakeBtn").disabled = false;
+        signInBtn.disabled = false;
+        retakeBtn.disabled = false;
       }
     }
 
-    function resetInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
-        location.reload();
-      }, 120000);
-    }
+    window.addEventListener("message", (event) => {
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (!data || typeof data.ok === "undefined") return;
+        handleServerResponse(data);
+      } catch (err) {
+        setStatus("Error reading server response.");
+        isSubmitting = false;
+        signInBtn.disabled = false;
+        retakeBtn.disabled = false;
+      }
+    });
 
-    document.getElementById("startCameraBtn").addEventListener("click", async () => {
+    async function handleStartCamera() {
       const names = validateNames();
       if (!names) return;
+
+      startCameraBtn.disabled = true;
 
       try {
         await startCamera();
         showStep(2);
-      } catch (_) {}
-    });
+      } catch (e) {
+        // message already shown
+      } finally {
+        startCameraBtn.disabled = false;
+      }
+    }
 
-    document.getElementById("captureBtn").addEventListener("click", () => {
+    function handleCapture() {
       try {
         photoDataUrl = captureAndResizeDataUrl();
         preview.src = photoDataUrl;
         stopCamera();
-        showStep(3);
         setStatus("");
+        showStep(3);
       } catch (e) {
-        setStatus("Could not capture photo.");
+        setStatus(e.message || "Could not capture photo.");
       }
-    });
+    }
 
-    document.getElementById("backBtn").addEventListener("click", () => {
-      stopCamera();
-      showStep(1);
-      setStatus("");
-    });
+    async function handleRetake() {
+      retakeBtn.disabled = true;
+      signInBtn.disabled = true;
 
-    document.getElementById("retakeBtn").addEventListener("click", async () => {
       try {
         await startCamera();
         showStep(2);
-      } catch (_) {}
-    });
+      } catch (e) {
+        // message already shown
+      } finally {
+        retakeBtn.disabled = false;
+        signInBtn.disabled = false;
+      }
+    }
 
-    document.getElementById("signInBtn").addEventListener("click", submitVisit);
-    document.getElementById("resetBtn").addEventListener("click", () => location.reload());
+    function handleBack() {
+      stopCamera();
+      setStatus("");
+      clearCameraError();
+      showStep(1);
+    }
+
+    function handleReset() {
+      location.reload();
+    }
+
+    startCameraBtn.addEventListener("click", handleStartCamera);
+    captureBtn.addEventListener("click", handleCapture);
+    backBtn.addEventListener("click", handleBack);
+    retakeBtn.addEventListener("click", handleRetake);
+    signInBtn.addEventListener("click", submitVisit);
+    resetBtn.addEventListener("click", handleReset);
 
     [firstNameEl, lastNameEl].forEach(el => {
-      el.addEventListener("keydown", e => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          document.getElementById("startCameraBtn").click();
+      el.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleStartCamera();
         }
       });
     });
 
-    ["click", "touchstart", "keydown", "mousemove"].forEach(evt => {
-      document.addEventListener(evt, resetInactivityTimer, { passive: true });
+    ["click", "touchstart", "keydown", "mousemove"].forEach(eventName => {
+      document.addEventListener(eventName, resetInactivityTimer, { passive: true });
     });
 
     window.addEventListener("beforeunload", stopCamera);
 
     showStep(1);
-    firstNameEl.focus();
     resetInactivityTimer();
   </script>
 </body>
