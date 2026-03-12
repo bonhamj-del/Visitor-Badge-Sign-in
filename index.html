@@ -61,7 +61,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       text-align: left;
       flex-shrink: 0;
     }
@@ -88,6 +88,30 @@
       margin-top: 6px;
       font-size: 16px;
       color: var(--muted);
+    }
+
+    .langRow {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .langBtn {
+      min-width: 120px;
+      padding: 12px 18px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .langBtn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      font-weight: 700;
     }
 
     .content {
@@ -190,7 +214,7 @@
       flex-wrap: wrap;
     }
 
-    button {
+    button.actionBtn {
       border: none;
       border-radius: 14px;
       padding: 16px 28px;
@@ -229,8 +253,9 @@
       .logo { height: 70px; }
       .welcome { font-size: 22px; }
       .subtext { font-size: 15px; }
-      button { width: 100%; }
-      .btns { gap: 12px; }
+      button.actionBtn, .langBtn { width: 100%; }
+      .btns, .langRow { gap: 12px; }
+      .langRow { flex-direction: column; }
     }
   </style>
 </head>
@@ -244,39 +269,44 @@
           alt="North Wasco County School District logo"
         >
         <div>
-          <h1 class="welcome">Welcome to North Wasco County School District</h1>
-          <div class="subtext">Please sign in before checking in with the front office.</div>
+          <h1 class="welcome" id="welcomeText">Welcome to North Wasco County School District</h1>
+          <div class="subtext" id="subtextText">Please sign in before checking in with the front office.</div>
         </div>
+      </div>
+
+      <div class="langRow">
+        <button class="langBtn active" id="langEnBtn" type="button">English</button>
+        <button class="langBtn" id="langEsBtn" type="button">Español</button>
       </div>
 
       <div class="content">
         <div id="step1" class="step active">
           <div class="row">
             <div>
-              <label for="firstName">First Name</label>
+              <label for="firstName" id="firstNameLabel">First Name</label>
               <input id="firstName" autocomplete="given-name">
             </div>
 
             <div>
-              <label for="lastName">Last Name</label>
+              <label for="lastName" id="lastNameLabel">Last Name</label>
               <input id="lastName" autocomplete="family-name">
             </div>
           </div>
 
-          <div class="hintBox small">
+          <div class="hintBox small" id="allowCameraText">
             When prompted, tap <strong>Allow</strong> to let this page use the camera.
           </div>
 
           <div class="btns">
-            <button class="primary" id="startCameraBtn" type="button">Next: Take Photo</button>
-            <button class="secondary" id="resetBtn" type="button">Reset</button>
+            <button class="actionBtn primary" id="startCameraBtn" type="button">Next: Take Photo</button>
+            <button class="actionBtn secondary" id="resetBtn" type="button">Reset</button>
           </div>
 
           <div class="status" id="status"></div>
         </div>
 
         <div id="step2" class="step">
-          <div class="hintBox">
+          <div class="hintBox" id="cameraHintText">
             Center your face in the frame, then tap <strong>Capture Photo</strong>.
           </div>
 
@@ -287,8 +317,8 @@
           <div id="cameraErrorBox" class="errorBox small"></div>
 
           <div class="btns">
-            <button class="primary" id="captureBtn" type="button">Capture Photo</button>
-            <button class="secondary" id="backBtn" type="button">Back</button>
+            <button class="actionBtn primary" id="captureBtn" type="button">Capture Photo</button>
+            <button class="actionBtn secondary" id="backBtn" type="button">Back</button>
           </div>
 
           <div class="status" id="statusCam"></div>
@@ -299,13 +329,13 @@
             <img id="preview" alt="Visitor photo preview">
           </div>
 
-          <div class="notice">
+          <div class="notice" id="secretaryText">
             Please check in with the secretary for your ID badge.
           </div>
 
           <div class="btns">
-            <button class="secondary" id="retakeBtn" type="button">Retake</button>
-            <button class="primary" id="signInBtn" type="button">Sign In</button>
+            <button class="actionBtn secondary" id="retakeBtn" type="button">Retake</button>
+            <button class="actionBtn primary" id="signInBtn" type="button">Sign In</button>
           </div>
 
           <div class="status" id="status2"></div>
@@ -325,11 +355,79 @@
     <input type="hidden" name="lastName" id="formLastName">
     <input type="hidden" name="photoDataUrl" id="formPhotoDataUrl">
     <input type="hidden" name="device" id="formDevice">
+    <input type="hidden" name="lang" id="formLang">
   </form>
 
   <iframe name="submitFrame" id="submitFrame" style="display:none;"></iframe>
 
   <script>
+    const i18n = {
+      en: {
+        welcome: "Welcome to North Wasco County School District",
+        subtext: "Please sign in before checking in with the front office.",
+        firstName: "First Name",
+        lastName: "Last Name",
+        allowCamera: 'When prompted, tap <strong>Allow</strong> to let this page use the camera.',
+        nextPhoto: "Next: Take Photo",
+        reset: "Reset",
+        cameraHint: 'Center your face in the frame, then tap <strong>Capture Photo</strong>.',
+        capture: "Capture Photo",
+        back: "Back",
+        secretary: "Please check in with the secretary for your ID badge.",
+        retake: "Retake",
+        signIn: "Sign In",
+        enterName: "Please enter first and last name.",
+        startingCamera: "Starting camera...",
+        missingPhoto: "Missing photo. Please retake the picture.",
+        creatingBadge: "Creating badge...",
+        done: "Done. Please check in with the secretary.",
+        stillWorking: "Still working... badge creation can take a little longer.",
+        cameraBlocked: "Camera access was blocked. Allow camera access for this site, then reload the page.",
+        noCamera: "No camera was found on this device.",
+        cameraBusy: "The camera is busy or unavailable. Close any other app using the camera and try again.",
+        cameraUnsupported: "This device or browser does not support camera access.",
+        cameraNotReady: "Camera is not ready yet. Please try again.",
+        captureFailed: "Could not capture photo.",
+        responseError: "Error reading server response.",
+        unknownError: "Unknown error"
+      },
+      es: {
+        welcome: "Bienvenido al Distrito Escolar del Condado de North Wasco",
+        subtext: "Por favor regístrese antes de pasar a la oficina principal.",
+        firstName: "Nombre",
+        lastName: "Apellido",
+        allowCamera: 'Cuando se le pida, toque <strong>Permitir</strong> para usar la cámara.',
+        nextPhoto: "Siguiente: Tomar foto",
+        reset: "Reiniciar",
+        cameraHint: 'Centre su rostro en la imagen y luego toque <strong>Tomar foto</strong>.',
+        capture: "Tomar foto",
+        back: "Atrás",
+        secretary: "Por favor pase con la secretaria para recibir su gafete.",
+        retake: "Tomar otra",
+        signIn: "Registrar",
+        enterName: "Por favor ingrese nombre y apellido.",
+        startingCamera: "Iniciando cámara...",
+        missingPhoto: "Falta la foto. Vuelva a tomarla.",
+        creatingBadge: "Creando gafete...",
+        done: "Listo. Por favor pase con la secretaria.",
+        stillWorking: "Todavía trabajando... la creación del gafete puede tardar un poco más.",
+        cameraBlocked: "El acceso a la cámara fue bloqueado. Permita la cámara para este sitio y vuelva a cargar la página.",
+        noCamera: "No se encontró una cámara en este dispositivo.",
+        cameraBusy: "La cámara está ocupada o no disponible. Cierre otra aplicación que la esté usando e inténtelo de nuevo.",
+        cameraUnsupported: "Este dispositivo o navegador no admite acceso a la cámara.",
+        cameraNotReady: "La cámara todavía no está lista. Inténtelo de nuevo.",
+        captureFailed: "No se pudo tomar la foto.",
+        responseError: "Error al leer la respuesta del servidor.",
+        unknownError: "Error desconocido"
+      }
+    };
+
+    let currentLang = "en";
+
+    function tr(key) {
+      return (i18n[currentLang] && i18n[currentLang][key]) || i18n.en[key] || key;
+    }
+
     const step1 = document.getElementById("step1");
     const step2 = document.getElementById("step2");
     const step3 = document.getElementById("step3");
@@ -351,6 +449,8 @@
     const signInBtn = document.getElementById("signInBtn");
     const resetBtn = document.getElementById("resetBtn");
     const submitFrame = document.getElementById("submitFrame");
+    const langEnBtn = document.getElementById("langEnBtn");
+    const langEsBtn = document.getElementById("langEsBtn");
 
     let stream = null;
     let photoDataUrl = null;
@@ -359,6 +459,26 @@
     let submitStartedAt = 0;
     let submitTimeout = null;
     let gotServerResponse = false;
+
+    function applyLanguage() {
+      document.getElementById("welcomeText").textContent = tr("welcome");
+      document.getElementById("subtextText").textContent = tr("subtext");
+      document.getElementById("firstNameLabel").textContent = tr("firstName");
+      document.getElementById("lastNameLabel").textContent = tr("lastName");
+      document.getElementById("allowCameraText").innerHTML = tr("allowCamera");
+      document.getElementById("cameraHintText").innerHTML = tr("cameraHint");
+      document.getElementById("secretaryText").textContent = tr("secretary");
+
+      startCameraBtn.textContent = tr("nextPhoto");
+      resetBtn.textContent = tr("reset");
+      captureBtn.textContent = tr("capture");
+      backBtn.textContent = tr("back");
+      retakeBtn.textContent = tr("retake");
+      signInBtn.textContent = tr("signIn");
+
+      langEnBtn.classList.toggle("active", currentLang === "en");
+      langEsBtn.classList.toggle("active", currentLang === "es");
+    }
 
     function setStatus(message) {
       const msg = message || "";
@@ -408,7 +528,7 @@
       const last = lastNameEl.value.trim();
 
       if (!first || !last) {
-        setStatus("Please enter first and last name.");
+        setStatus(tr("enterName"));
         return null;
       }
 
@@ -416,12 +536,12 @@
     }
 
     async function startCamera() {
-      setStatus("Starting camera...");
+      setStatus(tr("startingCamera"));
       clearCameraError();
       stopCamera();
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        const msg = "This device or browser does not support camera access.";
+        const msg = tr("cameraUnsupported");
         setStatus(msg);
         showCameraError(msg);
         throw new Error(msg);
@@ -441,14 +561,14 @@
         await video.play();
         setStatus("");
       } catch (e) {
-        let friendly = "Camera error.";
+        let friendly = tr("cameraUnsupported");
 
         if (e.name === "NotAllowedError") {
-          friendly = "Camera access was blocked. Allow camera access for this site, then reload the page.";
+          friendly = tr("cameraBlocked");
         } else if (e.name === "NotFoundError") {
-          friendly = "No camera was found on this device.";
+          friendly = tr("noCamera");
         } else if (e.name === "NotReadableError") {
-          friendly = "The camera is busy or unavailable. Close any other app using the camera and try again.";
+          friendly = tr("cameraBusy");
         } else if (e.message) {
           friendly = e.message;
         }
@@ -464,7 +584,7 @@
       const sourceHeight = video.videoHeight;
 
       if (!sourceWidth || !sourceHeight) {
-        throw new Error("Camera is not ready yet. Please try again.");
+        throw new Error(tr("cameraNotReady"));
       }
 
       const scale = Math.min(1, maxWidth / sourceWidth);
@@ -484,7 +604,7 @@
     function finishSuccess() {
       clearTimeout(submitTimeout);
       gotServerResponse = true;
-      setStatus("Done. Please check in with the secretary.");
+      setStatus(tr("done"));
       setTimeout(() => {
         location.reload();
       }, 1500);
@@ -493,7 +613,7 @@
     function finishError(message) {
       clearTimeout(submitTimeout);
       gotServerResponse = true;
-      setStatus("Error: " + (message || "Unknown error"));
+      setStatus("Error: " + (message || tr("unknownError")));
       isSubmitting = false;
       signInBtn.disabled = false;
       retakeBtn.disabled = false;
@@ -504,7 +624,7 @@
       if (!names) return;
 
       if (!photoDataUrl) {
-        setStatus("Missing photo. Please retake the picture.");
+        setStatus(tr("missingPhoto"));
         return;
       }
 
@@ -517,17 +637,18 @@
       signInBtn.disabled = true;
       retakeBtn.disabled = true;
 
-      setStatus("Creating badge...");
+      setStatus(tr("creatingBadge"));
 
       document.getElementById("formFirstName").value = names.first;
       document.getElementById("formLastName").value = names.last;
       document.getElementById("formPhotoDataUrl").value = photoDataUrl;
       document.getElementById("formDevice").value = navigator.userAgent;
+      document.getElementById("formLang").value = currentLang;
 
       clearTimeout(submitTimeout);
       submitTimeout = setTimeout(() => {
         if (!gotServerResponse) {
-          setStatus("Still working... badge creation can take a little longer.");
+          setStatus(tr("stillWorking"));
         }
       }, 8000);
 
@@ -548,17 +669,13 @@
         if (!data || typeof data.ok === "undefined") return;
         handleServerResponse(data);
       } catch (err) {
-        finishError("Error reading server response.");
+        finishError(tr("responseError"));
       }
     });
 
     submitFrame.addEventListener("load", () => {
       if (!isSubmitting || gotServerResponse) return;
-
-      // Ignore the initial empty iframe load and extremely quick loads.
       if (Date.now() - submitStartedAt < 1200) return;
-
-      // Fallback: backend likely finished, but message did not reach parent.
       finishSuccess();
     });
 
@@ -585,7 +702,7 @@
         setStatus("");
         showStep(3);
       } catch (e) {
-        setStatus(e.message || "Could not capture photo.");
+        setStatus(e.message || tr("captureFailed"));
       }
     }
 
@@ -621,6 +738,16 @@
     signInBtn.addEventListener("click", submitVisit);
     resetBtn.addEventListener("click", handleReset);
 
+    langEnBtn.addEventListener("click", () => {
+      currentLang = "en";
+      applyLanguage();
+    });
+
+    langEsBtn.addEventListener("click", () => {
+      currentLang = "es";
+      applyLanguage();
+    });
+
     [firstNameEl, lastNameEl].forEach(el => {
       el.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -636,6 +763,7 @@
 
     window.addEventListener("beforeunload", stopCamera);
 
+    applyLanguage();
     showStep(1);
     resetInactivityTimer();
   </script>
